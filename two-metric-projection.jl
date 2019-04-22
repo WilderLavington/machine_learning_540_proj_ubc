@@ -34,3 +34,19 @@ xnew = x-alpha*S*g
 return xnew = median([l xnew u],dims=2)
 
 end
+
+
+# This function compute a basis for the null space under block constraints
+function computeBasis(x,n)
+# x specifies a block, n is the dimensionality
+m = size(x)[1]
+# B is the basis we compute
+B = []
+for i in 2:m
+    b = zeros(n,)
+    b[x[1]] = 1
+    b[x[i]] = -1
+    B = [B b]
+end
+return B
+end
