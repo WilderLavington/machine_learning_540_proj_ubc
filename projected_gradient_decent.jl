@@ -53,13 +53,14 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
     n, d = size(X)
     alpha = randn(n) ./ (C + 1)
     count = 0
+	update = true
 
     # set blocks
     blocks = reshape(randperm(length(y)), (Numblocks, Int(length(y) / Numblocks)))
 
     # initial stepsize + sufficient decrease parameter
     step_size = 1e-2
-	gamma = 1e-4
+	gamma = 1e-5
 
     # primary loop
     while true
@@ -88,18 +89,30 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
 
 		# Decrease the step-size if we increased the function
 		gg = dot(g_b,g_b)
+		stepcount = 0
 		while f_b > f_bNew - gamma*step_size*gg
 			# Fit a degree-2 polynomial to set step-size
 			step_size = step_size^2*gg/(2(f_bNew - f_b + step_size*gg))
 			# Try out the smaller step-size
 			alpha_bNew = proj_step(B, C, alpha_b, step_size, g_b)
 			(f_bNew, g_b, H_b) = objective(y, X, alpha_bNew)
-			print(f_bNew, f_b)
+			# stopping condistions
+			stepcount += 1
+			if stepcount >= 10^4
+	            print("move to a different block \n")
+				update = false
+	            break
+	        end
+		end
+
+		# update everything
+		if update
+			alpha[block] = alpha_bNew[block]
 		end
 
         # Check convergence
         diff = norm(alpha - alpha_prev)
-        if diff < epsilon
+        if (diff < epsilon) & update
             print("broke threshold")
             break
         # stopping condistions
@@ -165,7 +178,7 @@ y_test_bin[label_2test] .= -1
 # hyper parameters
 max_iter = 10000
 C = 1.0
-epsilon = 0.001
+epsilon = 0.00001
 Numblocks = 5
 
 # train model
