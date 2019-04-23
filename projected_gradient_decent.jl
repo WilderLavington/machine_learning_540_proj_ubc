@@ -50,24 +50,24 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
         alpha_b = alpha[block]
         n_b = length(block)
 
-		# get update info
-		(f, g, H) = objective(y, x, alpha)
+	# get update info
+	(f, g, H) = objective(y, x, alpha)
 
-		# get basis
-		B = get_basis(alpha_b, n_b)
+	# get basis
+	B = get_basis(alpha_b, n_b)
 
-		# take gradient and use nullspace projection
-		alpha_bNew = (B*inv(B'*B)*B')*(x_bNew - step_size * g)
+	# take gradient and use nullspace projection
+	alpha_bNew = (B*inv(B'*B)*B')*(x_bNew - step_size * g)
 
-		# return all alpha that no longer satify constraints
-		alpha_lower = findall(0 .>  alpha_bNew)
-		alpha_higher = findall(C .<  alpha_bNew)
-		alpha_other = findall((alpha_bNew .> 0) .& (alpha_bNew.< C))
+	# return all alpha that no longer satify constraints
+	alpha_lower = findall(0 .>  alpha_bNew)
+	alpha_higher = findall(C .<  alpha_bNew)
+	alpha_other = findall((alpha_bNew .> 0) .& (alpha_bNew.< C))
 
-		# take the real projection step
-		alpha_b[alpha_lower] = (B*inv(B'*B)*B')*(zeros(length(alpha_higher)))
-		alpha_b[alpha_higher] = (B*inv(B'*B)*B')*(C*ones(length(alpha_higher)))
-		alpha_b[alpha_other] = alpha_bNew[alpha_other]
+	# take the real projection step
+	alpha_b[alpha_lower] = (B*inv(B'*B)*B')*(zeros(length(alpha_higher)))
+	alpha_b[alpha_higher] = (B*inv(B'*B)*B')*(C*ones(length(alpha_higher)))
+	alpha_b[alpha_other] = alpha_bNew[alpha_other]
 
         # Check convergence
         diff = norm(alpha - alpha_prev)
