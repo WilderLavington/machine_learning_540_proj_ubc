@@ -21,6 +21,16 @@ function computeBasis(x,n)
 	return B
 end
 
+# Predict function
+function predict(x, w, b)
+    if length(x) > length(w)
+        return sign.(x*w .+ b)
+    else
+        return sign.(w'*x + b)
+    end
+end
+
+# projection step
 function proj_step(B, C, alpha_b, step_size, g)
 	# first projected step
 	alpha_bNew = (B'*inv(B*B')*B)*(alpha_b - step_size * g)
@@ -48,7 +58,7 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
     blocks = reshape(randperm(length(y)), (Numblocks, Int(length(y) / Numblocks)))
 
     # initial stepsize + sufficient decrease parameter
-    step_size = 1
+    step_size = 1e-2
 	gamma = 1e-4
 
     # primary loop
@@ -78,12 +88,13 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
 
 		# Decrease the step-size if we increased the function
 		gg = dot(g_b,g_b)
-		while f_bNew > f_b - gamma*step_size*gg
+		while f_b > f_bNew - gamma*step_size*gg
 			# Fit a degree-2 polynomial to set step-size
 			step_size = step_size^2*gg/(2(f_bNew - f_b + step_size*gg))
 			# Try out the smaller step-size
 			alpha_bNew = proj_step(B, C, alpha_b, step_size, g_b)
-			(f_b, g_b, H_b) = objective(y, X, alpha_bNew)
+			(f_bNew, g_b, H_b) = objective(y, X, alpha_bNew)
+			print(f_bNew, f_b)
 		end
 
         # Check convergence
@@ -110,6 +121,9 @@ end
 
 # import data
 using RDatasets, LIBSVM
+using Random
+using LinearAlgebra
+using Statistics
 
 # Load Fisher's classic iris data
 iris = dataset("datasets", "iris")
@@ -150,14 +164,13 @@ y_test_bin[label_2test] .= -1
 
 # hyper parameters
 max_iter = 10000
-kernal_func = linear_kernal
 C = 1.0
 epsilon = 0.001
+Numblocks = 5
 
 # train model
 support_vectors, count, w, b = fit(X_train_bin, y_train_bin, C, epsilon, max_iter, Numblocks)
 
 # look at test error
 pred = predict(X_test_bin, w, b)
-print(sum((pred != y_test_bin)))
-
+print(sum((pred .!= y_test_bin)))
