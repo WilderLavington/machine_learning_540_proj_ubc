@@ -1,6 +1,6 @@
 # objective functon
 function objective(y, x, alpha)
-	f = alpha' * (y * y').*(x * x') * alpha - alpha*ones(size(y))
+	f = alpha' * ((y * y').*(x * x')) * alpha - alpha'*ones(size(y))
 	g = (y * y').*(x * x') * alpha - ones(size(y))
 	H = (y * y').*(x * x')
 	return (f, g, H)
@@ -34,6 +34,7 @@ function proj_step(B, C, alpha_b, step_size, g)
 	alpha_bNew[alpha_higher] = C*ones(length(alpha_higher))
 	# take the real projection step with clipped values
 	alpha_bNew = (B*inv(B'*B)*B')*(alpha_bNew)
+	# return
 	return alpha_bNew
 end
 
@@ -68,8 +69,9 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
 
 		# get objective info
 		(f_b, g_b, H_b) = objective(y_b, x_b, alpha_b)
+
 		# get basis
-		B = get_basis(alpha_b, n_b)
+		B = computeBasis(block, n_b)
 
 		# Try out the current step-size
 		alpha_bNew = proj_step(B, C, alpha_b, step_size, g)
@@ -105,3 +107,57 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
     # return
     return support_vectors, count, w, b
 end
+
+
+# import data
+using RDatasets, LIBSVM
+
+# Load Fisher's classic iris data
+iris = dataset("datasets", "iris")
+# LIBSVM handles multi-class data automatically using a one-against-one strategy
+labels = iris[:Species]
+# First dimension of input data is features; second is instances
+instances = iris[:, 1:4]
+
+# set training data
+X_train = convert(Matrix, instances[1:2:end, :])
+y_train = labels[1:2:end]
+
+# set test data
+X_test = convert(Matrix, instances[2:2:end, :])
+y_test =  labels[2:2:end]
+
+""" BINARY CLASSIFICATION """
+
+# binary labels
+label_1train = findall(y_train .==  "versicolor")
+label_2train = findall(y_train .==  "setosa")
+label_1test = findall(y_test .==  "versicolor")
+label_2test = findall(y_test .==  "setosa")
+binary_labels_train = [label_1train;label_2train]
+binary_labels_test = [label_1test;label_2test]
+
+# set training data
+X_train_bin = X_train[binary_labels_train, :]
+y_train_bin = zeros(length(binary_labels_train))
+y_train_bin[label_1train] .= 1
+y_train_bin[label_2train] .= -1
+
+# set test data
+X_test_bin = X_test[binary_labels_test, :]
+y_test_bin =  zeros(length(binary_labels_test))
+y_test_bin[label_1test] .= 1
+y_test_bin[label_2test] .= -1
+
+# hyper parameters
+max_iter = 10000
+kernal_func = linear_kernal
+C = 1.0
+epsilon = 0.001
+
+# train model
+support_vectors, count, w, b = fit(X_train_bin, y_train_bin, C, epsilon, max_iter, Numblocks)
+
+# look at test error
+pred = predict(X_test_bin, w, b)
+print(sum((pred != y_test_bin)))
