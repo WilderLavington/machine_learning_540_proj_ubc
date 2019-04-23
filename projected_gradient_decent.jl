@@ -11,29 +11,29 @@ function computeBasis(x,n)
 	# x specifies a block, n is the dimensionality
 	m = size(x)[1]
 	# B is the basis we compute
-	B = []
-	for i in 2:m
-	    b = zeros(n,)
+	B = zeros(m-1,n)
+	for i in 1:m-1
+	    b = zeros(n)
 	    b[x[1]] = 1
 	    b[x[i]] = -1
-	    B = [B b]
+	    B[i,:] = b
 	end
 	return B
 end
 
 function proj_step(B, C, alpha_b, step_size, g)
 	# first projected step
-	alpha_bNew = (B*inv(B'*B)*B')*(alpha_bNew - step_size * g)
+	alpha_bNew = (B'*inv(B*B')*B)*(alpha_b - step_size * g)
 	# return all alpha that no longer satify constraints
 	alpha_lower = findall(0 .>  alpha_bNew)
 	alpha_higher = findall(C .<  alpha_bNew)
-	alpha_other = findall((alpha_bNew .> 0) .& (alpha_bNew.< C))
+	alpha_other = findall((alpha_bNew .> 0) .& (alpha_bNew .< C))
 	# set all these values
 	alpha_bNew[alpha_other] = (alpha_b - step_size * g)[alpha_other]
-	alpha_bNew[alpha_lower] = zeros(length(alpha_higher))
+	alpha_bNew[alpha_lower] = zeros(length(alpha_lower))
 	alpha_bNew[alpha_higher] = C*ones(length(alpha_higher))
 	# take the real projection step with clipped values
-	alpha_bNew = (B*inv(B'*B)*B')*(alpha_bNew)
+	alpha_bNew = (B'*inv(B*B')*B)*(alpha_bNew)
 	# return
 	return alpha_bNew
 end
@@ -62,20 +62,19 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
         block = blocks[rand(1:Numblocks),:]
 
         # set block info
-        y_b = y[block]
-        x_b = X[block,:]
-        alpha_b = alpha[block]
+		alpha_b = zeros(size(alpha))
+        alpha_b[block] = alpha[block]
         n_b = length(block)
 
 		# get objective info
-		(f_b, g_b, H_b) = objective(y_b, x_b, alpha_b)
+		(f_b, g_b, H_b) = objective(y, X, alpha_b)
 
 		# get basis
-		B = computeBasis(block, n_b)
+		B = computeBasis(block, n)
 
 		# Try out the current step-size
-		alpha_bNew = proj_step(B, C, alpha_b, step_size, g)
-		(f_bNew, g_bNew, H_bNew) = objective(y_b, x_b, alpha_bNew)
+		alpha_bNew = proj_step(B, C, alpha_b, step_size, g_b)
+		(f_bNew, g_bNew, H_bNew) = objective(y, X, alpha_bNew)
 
 		# Decrease the step-size if we increased the function
 		gg = dot(g_b,g_b)
@@ -84,7 +83,7 @@ function fit(X, y, C, epsilon, max_iter, Numblocks)
 			step_size = step_size^2*gg/(2(f_bNew - f_b + step_size*gg))
 			# Try out the smaller step-size
 			alpha_bNew = proj_step(B, C, alpha_b, step_size, g_b)
-			(f_b, g_b, H_b) = objective(y_b, x_b, alpha_bNew)
+			(f_b, g_b, H_b) = objective(y, X, alpha_bNew)
 		end
 
         # Check convergence
@@ -161,3 +160,4 @@ support_vectors, count, w, b = fit(X_train_bin, y_train_bin, C, epsilon, max_ite
 # look at test error
 pred = predict(X_test_bin, w, b)
 print(sum((pred != y_test_bin)))
+
