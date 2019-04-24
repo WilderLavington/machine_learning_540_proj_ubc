@@ -38,15 +38,15 @@ end
 
 # This function compute a basis for the null space under block constraints
 function computeBasis(x,n)
-# x specifies a block, n is the dimensionality
-m = size(x)[1]
-# B is the basis we compute
-B = []
-for i in 2:m
-    b = zeros(n,)
-    b[x[1]] = 1
-    b[x[i]] = -1
-    B = [B b]
-end
-return B
+	# x specifies a block, n is the dimensionality
+	m = size(x)[1]
+	# B is the basis we compute
+	B = zeros(m-1,n)
+	for i in 1:m-1
+	    b = zeros(n)
+	    b[x[1]] = 1
+	    b[x[i]] = -1
+	    B[i,:] = b
+	end
+	return B
 end
