@@ -1,6 +1,7 @@
 using Random
 using LinearAlgebra
 using Statistics
+using Printf
 # linear kernal
 function linear_kernal(x1, x2)
     return x1'*x2
@@ -113,7 +114,7 @@ function gsq_rule(blocks, alpha, X, y, C, kernel, w_old, b_old)
     return blocks[idx,:], idx
 end
 # Fit function
-function fit_gsq(X, y, kernel, C, epsilon, max_iter)
+function fit_gsq(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
 
     # define lipshizt
     L = opnorm((y * y').*(X * X'), Inf)
@@ -124,6 +125,8 @@ function fit_gsq(X, y, kernel, C, epsilon, max_iter)
     # Initializations
     n, d = size(X)
     alpha = zeros(n)
+    trainErr = []
+    testErr = []
 
     # random initialization
     j = rand(1:n)
@@ -190,6 +193,18 @@ function fit_gsq(X, y, kernel, C, epsilon, max_iter)
             alpha[i] = alpha_prime_i + y_i*y_j * (alpha_prime_j - alpha[j])
         end
 
+        #Evaluation
+        @printf("Iteration: %d\n",count)
+        trainPred = predict(X, w, b)
+        trainErrRate = sum((trainPred .!= y))/size(y)[1]
+        push!(trainErr, trainErrRate)
+        @printf("Training error: %.3f\n", trainErrRate)
+        testPred = predict(X_test, w, b)
+        testErrRate = sum((testPred .!= y_test))/size(y)[1]
+        push!(testErr, testErrRate)
+        @printf("Testing error: %.3f\n", testErrRate)
+        alpha_prev = alpha
+
         # Check convergence via KKT
         satified = true
         pred = X*w .- b
@@ -232,20 +247,5 @@ function fit_gsq(X, y, kernel, C, epsilon, max_iter)
     # Get support vectors
     alpha_idx = findall((alpha .> 0) .& (alpha .< C))
     support_vectors = X[alpha_idx, :]
-    return support_vectors, count, w, b
+    return trainErr, testErr
 end
-
-X_fake = rand(100,2)
-X_fake[1:50,:] = X_fake[1:50,:] - 2*rand(50,2)
-y_fake = ones(100)
-y_fake[1:50] = -1*ones(50)
-
-# hyper parameters
-max_iter = 1e3
-kernal_func = linear_kernal
-C = 1.0
-epsilon = 0.01
-
-support_vectors, count, w, b = fit_gsq(X_fake, y_fake, kernal_func, C, epsilon, max_iter)
-pred = predict(X_fake, w, b)
-print(sum((pred .!= y_fake)))

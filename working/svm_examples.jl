@@ -1,4 +1,3 @@
-
 include("./smo_gsq.jl")
 include("./random_smo.jl")
 
@@ -7,10 +6,8 @@ using RDatasets, LIBSVM
 using Random
 using LinearAlgebra
 using Statistics
-
-
-a2a = dataset("datasets", "australian")
-a2a = dataset("datasets", "a2a")
+using PyPlot
+plt = PyPlot
 
 # Load Fisher's classic iris data
 iris = dataset("datasets", "iris")
@@ -50,25 +47,29 @@ y_test_bin[label_1test] .= 1
 y_test_bin[label_2test] .= -1
 
 # hyper parameters
-max_iter = 10000
+max_iter = 1000
 C = 1.0
 epsilon = 0.001
+kernal_func = linear_kernal
+x = collect(1:max_iter)
 
-# train model
-support_vectors, count, w, b = fit_gsq(X, y, kernel, C, epsilon, max_iter)
-# look at test error
-pred = predict(X_test_bin, w, b)
-print(sum((pred .!= y_test_bin)))
+# Evaluation
+trainErr, testErr = randomfit(X_train_bin, y_train_bin, X_test_bin, y_test_bin, kernal_func, C, epsilon, max_iter)
+print("Count: ",size(trainErr)[1])
 
-# train model
-support_vectors, count, w, b = randomfit(X, y, kernel, C, epsilon, max_iter)
-# look at test error
-pred = predict(X_test_bin, w, b)
-print(sum((pred .!= y_test_bin)))
+plt.plot([1,3])
+#plt.plot(x,testErr,label="Testing Error, Random")
+#plt.legend()
 
+"""
+max_iter = 1e6
+trainErr, testErr = fit_gsq(X_train_bin, y_train_bin, X_test_bin, y_test_bin, kernal_func, C, epsilon, max_iter)
+print("Count: ",size(trainErr)[1])
+"""
 
 """ BINARY CLASSIFICATION - FAKE DATA"""
 
+"""
 X_fake = rand(100,2)
 X_fake[1:50,:] = X_fake[1:50,:] - 2*rand(50,2)
 y_fake = ones(100)
@@ -90,3 +91,4 @@ support_vectors, count, w, b = randomfit(X, y, kernel, C, epsilon, max_iter)
 # look at test error
 pred = predict(X_test_bin, w, b)
 print(sum((pred .!= y_test_bin)))
+"""
