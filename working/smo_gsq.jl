@@ -131,8 +131,8 @@ function fit_gsq(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
     # random initialization
     j = rand(1:n)
     i = resrndint(0, n-1, j)
-    alpha[i] = C/2
-    alpha[j] = -C/2
+#     alpha[i] = C/2
+#     alpha[j] = -C/2
 
     # count for maxing out iterations
     count = 0
