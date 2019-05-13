@@ -6,19 +6,6 @@ using Printf
 function linear_kernal(x1, x2)
     return x1'*x2
 end
-# get random integer other then current
-function resrndint(a, b, z)
-    i = z
-    count = 0
-    vals = randperm(b-a)
-    for i = 1:(b-a)
-        if vals[i+a] != z
-            return vals[i+a]
-        end
-    end
-    print("error in ur codes ~ 26")
-    return 0
-end
 # Predict function
 function predict(x, w, b)
     if length(x) > length(w)
@@ -65,7 +52,7 @@ function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     # set d
     d_b = [mymedian(L, middle, H), -1*mymedian(L, middle, H)]
     # value
-    min_val = g_b'*d_b + L_val*(d_b'd_b)/2
+    min_val = g_b'*d_b + L_val^2*(d_b'd_b)/2
     # return
     return min_val
 end

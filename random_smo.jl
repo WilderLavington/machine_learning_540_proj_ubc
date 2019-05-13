@@ -6,7 +6,6 @@ using Printf
 function linear_kernal(x1, x2)
     return x1'*x2
 end
-# Predict function
 function predict(x, w, b)
     if length(x) > length(w)
         return sign.(x*w .- b)
@@ -14,94 +13,27 @@ function predict(x, w, b)
         return sign.(w'*x .- b)
     end
 end
-# Min over block
-function gss_rule(alpha, X, y, C, kernel, w_old, b_old)
-
-    # compute gradient
-    g = (y * y').*(X * X') * alpha - ones(size(y))
-
-    # find the indices that posative + negative
-    g_pos = g[findall(g .>= 0)]
-    g_neg = g[findall(g .< 0)]
-
-    # compute d_i if nothing is posative
-    if length(g_pos) == 0
-        # find largest value
-        max = maximum(g_neg)
-        val = findall(g_neg .== max)
-        idx = val[rand(1:length(val))]
-        # set d_i
-        d_i = findall(g .< 0)[idx]
-        # delete this value so its not picked again
-        deleteat!(g_neg, idx)
-    end
-
-    # compute d_j if nothing negative
-    if length(g_neg) == 0
-        # find largest value
-        min = maximum(g_pos)
-        val = findall(g_pos .== max)
-        idx = val[rand(1:length(val))]
-        # then return it
-        d_j = findall(g .>= 0)[idx]
-        # delete this value so its not picked again
-        deleteat!(g_pos, idx)
-    end
-
-    # compute d_i otherwise
-    if length(g_pos) > 0
-        while true
-            # find the most posative
-            max = maximum(g_pos)
-            val = findall(g_pos .== max)
-            idx = val[rand(1:length(val))]
-            if g_pos[idx] == C
-                # remove it from consideration if its at the boundary
-                deleteat!(g_pos, idx)
-                continue
-            else
-                # otherwise return it
-                d_i = findall(g .>= 0)[idx]
-                break
-            end
+# get random integer other then current
+function resrndint(a, b, z)
+    i = z
+    count = 0
+    vals = randperm(b-a)
+    for i = 1:(b-a)
+        if vals[i+a] != z
+            return vals[i+a]
         end
     end
-
-    # compute d_j
-    if length(g_neg) > 0
-        # find the most negative
-        min = minimum(g_neg)
-        val = findall(g_neg .== min)
-        idx = val[rand(1:length(val))]
-        # then return it
-        d_j = findall(g .< 0)[idx]
-    end
-    # return
-    return d_i, d_j
+    print("error in ur codes ~ 26")
+    return 0
 end
-# Fit function
-function fit_gss(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
-
-    # generate all blocks
-    blocks = generate_blocks(length(y))
-
+# fit function
+function randomfit(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
     # Initializations
-    n, d = size(X)
-    alpha = zeros(n)
     trainErr = zeros(Int(max_iter))
     testErr = zeros(Int(max_iter))
-
-    # count for maxing out iterations
+    n, d = size(X)
+    alpha = zeros(n)
     count_ = 1
-
-    # Compute model parameters
-    sv = findall((alpha .> 0) .& (alpha .< C))
-    w = transpose(X) * (alpha.*y)
-    if length(sv) > 0
-        b = transpose(w) * X[sv[1],:] - y[sv[1]]
-    else
-        b = 0
-    end
 
     #Evaluation
     @printf("Iteration: %d\n",count_)
@@ -117,10 +49,10 @@ function fit_gss(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
 
     # primary loop
     while true
-        # update stopping conditions
         count_ += 1
-        # compute best block
-        i, j = gss_rule(alpha, X, y, C, kernel, w, b)
+        # get random integer between 0, and n-1 != j
+        j = rand(1:n)
+        i = resrndint(0, n-1, j)
         # pick the x and ys for the update
         x_i, x_j, y_i, y_j = X[i,:], X[j,:], y[i], y[j]
         # evaluate the kernal under these values
@@ -198,8 +130,6 @@ function fit_gss(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
         end
         # stopping condistions
         if satified
-            testErr[count_:end] .= testErr[count_]
-            trainErr[count_:end] .= trainErr[count_]
             println("KKT conditions satified")
             break
         elseif count_ >= max_iter

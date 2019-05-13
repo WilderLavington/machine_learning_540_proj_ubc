@@ -96,7 +96,7 @@ function gsq_block(block, alpha, X, y, C, Hess, kernel, w_old, b_old)
     H_b = [Hess[i, i] Hess[j, i]; Hess[i, j] Hess[j, j]]
 
     # value
-    min_val = g_b'*d_b + L*(d_b'*H_b*d_b)/2
+    min_val = g_b'*d_b + (d_b'*H_b*d_b)
 
     # return
     return min_val
