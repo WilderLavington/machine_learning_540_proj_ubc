@@ -39,7 +39,7 @@ function mymedian(num1, num2, num3)
     end
 end
 # Min over block
-function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
+function gsq_block_diagApprxH(block, alpha, X, y, C, diag_H, kernel, w_old, b_old)
     # compute blocks
     i, j = Int(block[2]), Int(block[1])
     # get the current dual parameters
@@ -52,7 +52,7 @@ function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     # set d
     d_b = [mymedian(L, middle, H), -1*mymedian(L, middle, H)]
     # value
-    min_val = g_b'*d_b + L_val^2*(d_b'*d_b)/2
+    min_val = g_b'*d_b + (d_b'*diag_H*d_b)
     # return
     return min_val
 end
