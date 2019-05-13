@@ -52,24 +52,26 @@ function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     # set d
     d_b = [mymedian(L, middle, H), -1*mymedian(L, middle, H)]
     # value
-    min_val = g_b'*d_b + L_val*(d_b'd_b)/2
+    min_val = g_b'*d_b + L_val*(d_b'*d_b)/2
     # return
-    return min_val
+    return min_val, d_b
 end
 # Min over block
 function gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w_old, b_old)
     updates = zeros(size(blocks)[1])
+    dir = zeros(size(blocks))
     # use the largest eigen value for picking
     H = (y * y').*(X * X')
     val = eigvals(H)
     approx = maximum(val)
     for i = 1:size(blocks)[1]
-        updates[i] = gsq_block_diagApprx(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
+        updates[i], dir[i,:] = gsq_block_diagApprx(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
     end
     min = minimum(updates)
     val = findall(updates .== min)
     idx = val[rand(1:length(val))]
-    return blocks[idx,:], idx
+    d = dir[idx,:]
+    return blocks[idx,:], idx, d
 end
 # Fit function
 function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
@@ -112,11 +114,14 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
         # update stopping conditions
         count_ += 1
         # compute best block
-        best_block, idx = gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w, b)
+        best_block, idx, d = gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w, b)
 
         # compute blocks
         i, j = Int(best_block[1]), Int(best_block[2])
         # pick the x and ys for the update
+        alpha[i] = alpha[i]+d[1]
+        alpha[j] = alpha[j]+d[2]
+        '''
         x_i, x_j, y_i, y_j = X[i,:], X[j,:], y[i], y[j]
         # evaluate the kernal under these values
         k_ij = kernel(x_i, x_i) + kernel(x_j, x_j) - 2 * kernel(x_i, x_j)
@@ -154,6 +159,7 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
             alpha[j] = min(alpha[j], H)
             alpha[i] = alpha_prime_i + y_i*y_j * (alpha_prime_j - alpha[j])
         end
+        '''
 
         #Evaluation
         @printf("Iteration: %d\n",count_)
@@ -213,3 +219,21 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
     support_vectors = X[alpha_idx, :]
     return trainErr, testErr, count_, support_vectors
 end
+
+X_fake = rand(100,2)
+X_fake[1:50,:] = X_fake[1:50,:] - 2*rand(50,2)
+y_fake = ones(100)
+y_fake[1:50] = -1*ones(50)
+
+X_faket = rand(100,2)
+X_faket[1:50,:] = X_faket[1:50,:] - 2*rand(50,2)
+y_faket = ones(100)
+y_faket[1:50] = -1*ones(50)
+
+# hyper parameters
+max_iter = 1e6
+C = 1.0
+epsilon = 0.005
+kernal_func = linear_kernal
+
+trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gsq_diagApprx(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
