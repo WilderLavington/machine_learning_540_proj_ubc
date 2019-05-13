@@ -119,8 +119,11 @@ trainErr_6, testErr_6, count_6, support_vectors_6 = fit_gsq_identityHess(X_fake,
 # psuedocode approximation of gs-q with L*I
 trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gsq_diagApprx(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
 # psuedocode approximation of gs-q with Diag(H)
-trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gsq_diagApprxH(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
+trainErr_8, testErr_8, count_8, support_vectors_8 = fit_gsq_diagApprxH(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
+# psuedocode approximation of gs-q with Diag(H)
+trainErr_8, testErr_8, count_8, support_vectors_8 = fit_gss(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
 #
+
 println(count_1)
 println(count_2)
 println(count_3)
