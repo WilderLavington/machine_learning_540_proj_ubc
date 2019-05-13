@@ -57,14 +57,14 @@ function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     return min_val
 end
 # Min over block
-function gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w_old, b_old)
+function gsq_rule_diagApprxH(blocks, alpha, X, y, C, kernel, w_old, b_old)
     updates = zeros(size(blocks)[1])
     # use the largest eigen value for picking
     H = (y * y').*(X * X')
     val = eigvals(H)
     approx = Diagonal(val)
     for i = 1:size(blocks)[1]
-        updates[i] = gsq_block_diagApprx(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
+        updates[i] = gsq_block_diagApprxH(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
     end
     min = minimum(updates)
     val = findall(updates .== min)
@@ -72,7 +72,7 @@ function gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w_old, b_old)
     return blocks[idx,:], idx
 end
 # Fit function
-function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
+function fit_gsq_diagApprxH(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
 
     # generate all blocks
     blocks = generate_blocks(length(y))
