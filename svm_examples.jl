@@ -103,6 +103,7 @@ y_faket[1:50] = -1*ones(50)
 max_iter = 1e6
 C = 1.0
 epsilon = 0.005
+kernal_func = linear_kernal
 
 # random
 trainErr_1, testErr_1, count_1, support_vectors_1 = randomfit(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
@@ -115,7 +116,7 @@ trainErr_5, testErr_5, count_5, support_vectors_5 = fit_approx_gsq_alternij(X_fa
 # hessian approximations
 trainErr_6, testErr_6, count_6, support_vectors_6 = fit_gsq_identityHess(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
 # psuedocode approximation of gs-q
-# trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gsq_diagApprx(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
+trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gsq_diagApprx(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
 #
 # trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gss(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
 #

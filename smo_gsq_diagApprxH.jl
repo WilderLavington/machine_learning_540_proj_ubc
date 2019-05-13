@@ -41,7 +41,7 @@ end
 # Min over block
 function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     # compute blocks
-    i, j = Int(block[1]), Int(block[2])
+    i, j = Int(block[2]), Int(block[1])
     # get the current dual parameters
     alpha_j, alpha_i = alpha[j], alpha[i]
     # set g
@@ -52,7 +52,7 @@ function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     # set d
     d_b = [mymedian(L, middle, H), -1*mymedian(L, middle, H)]
     # value
-    min_val = g_b'*d_b + L_val*(d_b'd_b)/2
+    min_val = g_b'*d_b + L_val^2*(d_b'd_b)/2
     # return
     return min_val
 end
@@ -62,7 +62,7 @@ function gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w_old, b_old)
     # use the largest eigen value for picking
     H = (y * y').*(X * X')
     val = eigvals(H)
-    approx = maximum(val)
+    approx = Diagonal(val)
     for i = 1:size(blocks)[1]
         updates[i] = gsq_block_diagApprx(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
     end
