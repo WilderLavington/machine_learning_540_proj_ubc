@@ -29,48 +29,52 @@ function generate_blocks(n)
     end
     return blocks
 end
-function mymedian(num1, num2, num3)
-    if num2 >= num3
-        return num3
-    elseif num1 >= num2
-        return num1
-    else
-        return num2
-    end
-end
+
 # Min over block
-function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
-    # compute blocks
-    i, j = Int(block[2]), Int(block[1])
-    # get the current dual parameters
-    alpha_j, alpha_i = alpha[j], alpha[i]
-    # set g
-    g = (y * y').*(X * X') * alpha - ones(size(y))
-    g_b = g[[i, j]]
-    # get H and L values
-    (L, middle, H) = (max(- alpha_i, alpha_j - C ), -1*(g_b[1] - g_b[2])/(2*L_val) ,min(C- alpha_i, alpha_j))
-    # set d
-    d_b = [mymedian(L, middle, H), -1*mymedian(L, middle, H)]
-    # value
-    min_val = g_b'*d_b + L_val^2*(d_b'*d_b)/2
-    # return
-    return min_val
+function gsq_block_diagApprxH(block, alpha, X, y, C, H, kernel, w_old, b_old)
+   # compute blocks
+   i, j = Int(block[1]), Int(block[2])
+   # compute s
+   s = y[i]*y[j]
+   # get the current dual parameters
+   alpha_j, alpha_i = alpha[j], alpha[i]
+   # set g
+   g = (y * y').*(X* X') * alpha - ones(size(y))
+   g_b = g[[i, j]]
+   # get middle value
+   middle = -1*(g_b[1] - s*g_b[2])/(H[i,i]+H[j,j])
+   # get H and L values
+   if s == 1
+       (L, H) = (max(- alpha_i, alpha_j - C ), min(C- alpha_i, alpha_j))
+   else
+       (L, H) = (max(-alpha_i,-alpha_j), min(C-alpha_i,C-alpha_j))
+   end
+   # set d
+   d = median([L, middle, H])
+   d_b = [d, -s*d]
+   # value
+   min_val = g_b'*d_b + (d_b'*H*d_b)/2
+   # return
+   return min_val, d_b
 end
+
 # Min over block
 function gsq_rule_diagApprxH(blocks, alpha, X, y, C, kernel, w_old, b_old)
     updates = zeros(size(blocks)[1])
+    dir = zeros(size(blocks))
     # use the largest eigen value for picking
     H = (y * y').*(X * X')
-    val = eigvals(H)
-    approx = Diagonal(val)
+    approx = Diagonal(diag(H))*2
     for i = 1:size(blocks)[1]
-        updates[i] = gsq_block_diagApprxH(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
+        updates[i], dir[i,:] = gsq_block_diagApprxH(blocks[i,:], alpha, X, y, C, approx, kernel, w_old, b_old)
     end
     min = minimum(updates)
     val = findall(updates .== min)
     idx = val[rand(1:length(val))]
-    return blocks[idx,:], idx
+    d = dir[idx,:]
+    return blocks[idx,:], idx, d
 end
+
 # Fit function
 function fit_gsq_diagApprxH(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
 
@@ -112,11 +116,18 @@ function fit_gsq_diagApprxH(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
         # update stopping conditions
         count_ += 1
         # compute best block
-        best_block, idx = gsq_rule_diagApprx(blocks, alpha, X, y, C, kernel, w, b)
+        best_block, idx, d = gsq_rule_diagApprxH(blocks, alpha, X, y, C, kernel, w, b)
 
         # compute blocks
         i, j = Int(best_block[1]), Int(best_block[2])
+        ######################################
+        # This is approximate line search
+        alpha[i] = alpha[i]+d[1]
+        alpha[j] = alpha[j]+d[2]
+        ######################################
+        # This is exact line search
         # pick the x and ys for the update
+        '''
         x_i, x_j, y_i, y_j = X[i,:], X[j,:], y[i], y[j]
         # evaluate the kernal under these values
         k_ij = kernel(x_i, x_i) + kernel(x_j, x_j) - 2 * kernel(x_i, x_j)
@@ -154,7 +165,8 @@ function fit_gsq_diagApprxH(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
             alpha[j] = min(alpha[j], H)
             alpha[i] = alpha_prime_i + y_i*y_j * (alpha_prime_j - alpha[j])
         end
-
+        '''
+        ######################################
         #Evaluation
         @printf("Iteration: %d\n",count_)
         # trainPred = predict(X, w, b)

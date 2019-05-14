@@ -29,28 +29,29 @@ function generate_blocks(n)
     end
     return blocks
 end
-function mymedian(num1, num2, num3)
-    if num2 >= num3
-        return num3
-    elseif num1 >= num2
-        return num1
-    else
-        return num2
-    end
-end
+
 # Min over block
 function gsq_block_diagApprx(block, alpha, X, y, C, L_val, kernel, w_old, b_old)
     # compute blocks
     i, j = Int(block[1]), Int(block[2])
+    # compute s
+    s = y[i]*y[j]
     # get the current dual parameters
     alpha_j, alpha_i = alpha[j], alpha[i]
     # set g
-    g = (y * y').*(X * X') * alpha - ones(size(y))
+    g = (y * y').*(X* X') * alpha - ones(size(y))
     g_b = g[[i, j]]
+    # get middle value
+    middle = -1*(g_b[1] - s*g_b[2])/(2*L_val)
     # get H and L values
-    (L, middle, H) = (max(- alpha_i, alpha_j - C ), -1*(g_b[1] - g_b[2])/(2*L_val) ,min(C- alpha_i, alpha_j))
+    if s == 1
+        (L, H) = (max(- alpha_i, alpha_j - C ), min(C- alpha_i, alpha_j))
+    else
+        (L, H) = (max(-alpha_i,-alpha_j), min(C-alpha_i,C-alpha_j))
+    end
     # set d
-    d_b = [mymedian(L, middle, H), -1*mymedian(L, middle, H)]
+    d = median([L, middle, H])
+    d_b = [d, -s*d]
     # value
     min_val = g_b'*d_b + L_val*(d_b'*d_b)/2
     # return
@@ -107,7 +108,7 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
     # testErrRate = sum((testPred .!= y_test))/size(y)[1]
     testErr[count_] = 0.5*alpha'*((y_test*y_test').*(X_test*X_test'))*alpha - sum(alpha)
     @printf("Testing error: %.3f\n", testErr[count_])
-    alpha_prev = alpha
+    alpha_prev = copy(alpha)
 
     # primary loop
     while true
@@ -118,10 +119,14 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
 
         # compute blocks
         i, j = Int(best_block[1]), Int(best_block[2])
-        # pick the x and ys for the update
+        ######################################
+        # This is approximate line search
         alpha[i] = alpha[i]+d[1]
         alpha[j] = alpha[j]+d[2]
         '''
+        ######################################
+        # This is exact line search
+        # pick the x and ys for the update
         x_i, x_j, y_i, y_j = X[i,:], X[j,:], y[i], y[j]
         # evaluate the kernal under these values
         k_ij = kernel(x_i, x_i) + kernel(x_j, x_j) - 2 * kernel(x_i, x_j)
@@ -159,8 +164,8 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
             alpha[j] = min(alpha[j], H)
             alpha[i] = alpha_prime_i + y_i*y_j * (alpha_prime_j - alpha[j])
         end
+        ######################################
         '''
-
         #Evaluation
         @printf("Iteration: %d\n",count_)
         # trainPred = predict(X, w, b)
@@ -219,21 +224,3 @@ function fit_gsq_diagApprx(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
     support_vectors = X[alpha_idx, :]
     return trainErr, testErr, count_, support_vectors
 end
-
-X_fake = rand(100,2)
-X_fake[1:50,:] = X_fake[1:50,:] - 2*rand(50,2)
-y_fake = ones(100)
-y_fake[1:50] = -1*ones(50)
-
-X_faket = rand(100,2)
-X_faket[1:50,:] = X_faket[1:50,:] - 2*rand(50,2)
-y_faket = ones(100)
-y_faket[1:50] = -1*ones(50)
-
-# hyper parameters
-max_iter = 1e6
-C = 1.0
-epsilon = 0.005
-kernal_func = linear_kernal
-
-trainErr_7, testErr_7, count_7, support_vectors_7 = fit_gsq_diagApprx(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
