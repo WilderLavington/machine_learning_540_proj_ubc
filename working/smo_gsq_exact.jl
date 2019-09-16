@@ -47,7 +47,7 @@ function gsq_rule(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w_old, b_
 end
 
 # Fit function
-function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
+function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print_info_)
 
     # generate all blocks
     blocks = generate_blocks(length(y))
@@ -84,7 +84,9 @@ function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
     testErr[count_] = testErrRate
 
     # print info
-    print_info(count_, trainErr[count_], testErr[count_])
+    if print_info_
+        print_info(count_, trainErr[count_], testErr[count_])
+    end
 
     # primary loop
     while true
@@ -114,7 +116,9 @@ function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter)
         testErr[count_] = testErrRate
 
         # print info
-        print_info(count_, trainErr[count_], testErr[count_])
+        if print_info_
+            print_info(count_, trainErr[count_], testErr[count_])
+        end
 
         # evaluate KKT conditions
         satified = KKT_conditions(X,y,n,alpha,w,b)

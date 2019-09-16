@@ -2,6 +2,9 @@
 include("./random_smo.jl")
 include("./smo_gsq_exact.jl")
 include("./smo_gsq_approx_1.jl")
+include("./smo_gsq_approx_2_a.jl")
+include("./smo_gsq_approx_3.jl")
+
 # include("./smo_efficient_gsq_j.jl")
 # include("./smo_efficient_gsq_i.jl")
 # include("./smo_efficient_gsq_alternij.jl")
@@ -21,29 +24,34 @@ using Statistics
 #
 # end
 
-X_fake = rand(10,2)
-X_fake[1:5,:] = X_fake[1:5,:] - 2*rand(5,2)
-y_fake = ones(10)
-y_fake[1:5] = -1*ones(5)
+X_fake = rand(100,2)
+X_fake[1:50,:] = X_fake[1:50,:] - 2*rand(50,2)
+y_fake = ones(100)
+y_fake[1:50] = -1*ones(50)
 
 
-X_faket = rand(10,2)
-X_faket[1:5,:] = X_faket[1:5,:] - 2*rand(5,2)
-y_faket = ones(10)
-y_faket[1:5] = -1*ones(5)
+X_faket = rand(100,2)
+X_faket[1:50,:] = X_faket[1:50,:] - 2*rand(50,2)
+y_faket = ones(100)
+y_faket[1:50] = -1*ones(50)
 
 # hyper parameters
-max_iter = 1e4
+max_iter = 1e5
 C = 1.0
 epsilon = 0.01
 kernal_func = linear_kernal
 
 # random
-trainErr_1, testErr_1, count_1, support_vectors_1 = fit_gsq_random(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
+trainErr_1, testErr_1, count_1, support_vectors_1 = fit_gsq_random(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
 # exact
-trainErr_2, testErr_2, count_2, support_vectors_2 = fit_gsq_exact(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
+trainErr_2, testErr_2, count_2, support_vectors_2 = fit_gsq_exact(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
 # first approximation H = L * I
-trainErr_3, testErr_3, count_3, support_vectors_3 = fit_gsq_approx_1(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter)
+trainErr_3, testErr_3, count_3, support_vectors_3 = fit_gsq_approx_1(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+# second
+trainErr_4, testErr_4, count_4, support_vectors_4 = fit_gsq_approx_2_a(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+# last
+trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_3(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+
 
 # # now train using libsvm
 # using LIBSVM

@@ -2,35 +2,77 @@ using Random
 using LinearAlgebra
 using Statistics
 using Printf
-include("smo.jl")
 include("helper_fxns.jl")
+include("smo.jl")
 
-# get random integer other then current
-function resrndint(a, b, z)
-    i = z
-    count = 0
-    vals = randperm(b-a)
-    for i = 1:(b-a)
-        if vals[i+a] != z
-            return vals[i+a]
+function compute_diff(grad, L)
+    n = length(grad)
+    grad_diff = zeros(n, n)
+    for i = 1:n
+        for j = 1:n
+            grad_diff[i,j] = (grad[i] - grad[j])^2 / L[i]
         end
     end
-    print("error in ur codes ~ 26")
-    return 0
+    return grad_diff
 end
 
-# fit function
-function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print_info_)
+# Max grad over block
+function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kernel, w_old, b_old)
+
+    # init minimum
+    n = size(y)[1]
+
+    # compute gradient
+    g = H * alpha - ones(n)
+
+    # pick the first coordinate by largest gradient not equal to
+    viable_indices = findall(((g .> 0) .& (alpha .>= C)) .| ((g .< 0) .& (alpha .<= 0.)) .| ((alpha .< C) .& (alpha .> 0.)))
+
+    # set the values we can actually update
+    viable_g = g[viable_indices]
+    viable_alpha = alpha[viable_indices]
+    viable_L = L[viable_indices]
+
+    # find difference
+    diff_mat = 2*compute_diff(viable_g, viable_L)
+
+    # get max coordinates
+    coords = findall(diff_mat .== maximum(diff_mat))
+
+    # shuffle
+    eval_order = shuffle(collect(1:length(coords)))
+
+    # grab coord indexes
+    coord_1 = viable_indices[coords[eval_order[1]][1]]
+    coord_2 = viable_indices[coords[eval_order[1]][2]]
+
+    # set this value as our block
+    best_block = [coord_1, coord_2]
+
+    # compute the exact update
+    _, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
+
+    # return info
+    return best_block, alpha_i, alpha_j
+end
+
+# Fit function
+function fit_gsq_approx_3(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print_info_)
+
     # generate all blocks
     blocks = generate_blocks(length(y))
+
     # Initializations
     n, d = size(X)
     alpha = zeros(n)
+
     # data storage
     trainErr = zeros(Int(max_iter))
     testErr = zeros(Int(max_iter))
+
     # count for maxing out iterations
     count_ = 1
+
     # Compute model parameters
     sv = findall((alpha .> 0) .& (alpha .< C))
     w = transpose(X) * (alpha.*y)
@@ -39,10 +81,15 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
     else
         b = 0
     end
+
     # pre-compute hessian
     H = (y * y').*(X * X')
+
+    # compute diag of quadratic
+    L = diag(diagnolize(H))
+
     # pre-compute number of blocks
-    number_of_blocks = length(blocks)
+    number_of_blocks, _ = size(blocks)
 
     # Evaluation
     trainErr[count_] = 0.5*alpha'*(H)*alpha - sum(alpha)
@@ -54,26 +101,20 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
         print_info(count_, trainErr[count_], testErr[count_])
     end
 
-
     # primary loop
     while true
+
+        # update stopping conditions
         count_ += 1
 
-        # get random integer between 0, and n-1 != j
-        j = rand(1:n)
-        i = resrndint(0, n-1, j)
+        # compute best block
+        best_block, alpha_i, alpha_j = approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kernel, w, b)
 
-        # compute gradient
-        g = (y * y').*(X * X') * alpha - ones(size(y))
+        # Set new alpha values
+        alpha[Int(best_block[1])] = alpha_i
+        alpha[Int(best_block[2])] = alpha_j
 
-        # evaluate SMO rule
-        obj_val, a_i, a_j = smo_block([i,j], alpha, X, y, C, H, g, kernel, w, b)
-
-        # update alphas
-        alpha[i] = a_i
-        alpha[j] = a_j
-
-        # Compute model parameters
+        # re-compute model parameters
         sv = findall((alpha .> 0) .& (alpha .< C))
         w = transpose(X) * (alpha.*y)
         if length(sv) > 0
@@ -97,13 +138,11 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
 
         # stopping condistions
         if satified
-            testErr[count_:end] .= testErr[count_]
-            trainErr[count_:end] .= trainErr[count_]
             println("KKT conditions satified")
             break
         elseif count_ >= max_iter
             println("exceeded max iterations")
-            break
+            return trainErr, testErr, count_, sv, w, b
         end
     end
     # find a support vector
@@ -114,5 +153,6 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
     # Get support vectors
     alpha_idx = findall((alpha .> 0) .& (alpha .< C))
     support_vectors = X[alpha_idx, :]
-    return trainErr, testErr, count_, support_vectors
+    # return it all
+    return trainErr, testErr, count_, support_vectors, w, b
 end
