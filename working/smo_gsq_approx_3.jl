@@ -34,7 +34,7 @@ function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kerne
     viable_L = L[viable_indices]
 
     # find difference
-    diff_mat = 2*compute_diff(viable_g, viable_L)
+    diff_mat = compute_diff(viable_g, viable_L)
 
     # get max coordinates
     coords = findall(diff_mat .== maximum(diff_mat))

@@ -43,6 +43,7 @@ function gsq_rule(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w_old, b_
             best_block = current_block
         end
     end
+    #print(best_block)
     return best_block, alpha_i, alpha_j
 end
 
@@ -117,6 +118,7 @@ function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print
 
         # print info
         if print_info_
+            println(best_block)
             print_info(count_, trainErr[count_], testErr[count_])
         end
 

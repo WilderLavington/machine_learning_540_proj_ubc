@@ -36,9 +36,9 @@ y_faket = ones(100)
 y_faket[1:50] = -1*ones(50)
 
 # hyper parameters
-max_iter = 1e5
+max_iter = 5e4
 C = 1.0
-epsilon = 0.01
+epsilon = 0.1
 kernal_func = linear_kernal
 
 # random
