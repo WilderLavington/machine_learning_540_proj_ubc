@@ -38,7 +38,7 @@ function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kerne
 
     # get max coordinates
     coords = findall(diff_mat .== maximum(diff_mat))
-    
+
     # shuffle
     eval_order = shuffle(collect(1:length(coords)))
 
@@ -50,7 +50,7 @@ function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kerne
     best_block = [coord_1, coord_2]
 
     # compute the exact update
-    obj, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
+    alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
 
     # return info
     return best_block, alpha_i, alpha_j
@@ -110,6 +110,9 @@ function fit_gsq_approx_3(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
         # compute best block
         best_block, alpha_i, alpha_j = approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kernel, w, b)
 
+        # compute stopping flag
+        stop_flag = norm([alpha_i alpha_j] - [alpha[Int(best_block[1])] alpha[Int(best_block[2])]], 1)
+
         # Set new alpha values
         alpha[Int(best_block[1])] = alpha_i
         alpha[Int(best_block[2])] = alpha_j
@@ -133,26 +136,25 @@ function fit_gsq_approx_3(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
             print_info(count_, trainErr[count_], testErr[count_])
         end
 
-        # evaluate KKT conditions
-        satified = KKT_conditions(X,y,n,alpha,w,b)
-
         # stopping condistions
+
+        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,(stop_flag < 1e-15))
+
+        # check if we should stop
         if satified
-            println("KKT conditions satified")
             break
-        elseif count_ >= max_iter
-            println("exceeded max iterations")
-            return trainErr, testErr, count_, sv, w, b
         end
     end
-    # find a support vector
-    sv = findall((alpha .> 0) .& (alpha .< C))[1]
-    # Compute model parameters
+
+    # compute parameters
+    sv = findall((alpha .> 0) .& (alpha .< C))
     w = transpose(X) * (alpha.*y)
-    b = transpose(w) * X[sv,:] - y[sv]
-    # Get support vectors
-    alpha_idx = findall((alpha .> 0) .& (alpha .< C))
-    support_vectors = X[alpha_idx, :]
+    if length(sv) > 0
+        b = transpose(w) * X[sv[1],:] - y[sv[1]]
+    else
+        b = 0
+    end
+
     # return it all
-    return trainErr, testErr, count_, support_vectors, w, b
+    return trainErr, testErr, count_, sv, w, b
 end

@@ -113,7 +113,6 @@ function KKT_conditions(X,y,n,alpha,w,b)
     end
     return satified
 end
-
 # kkt conditions for a given example
 function KKT_conditions_perValue(X,y,n,alpha,w,b,i)
     # Check convergence via KKT
@@ -133,4 +132,27 @@ function KKT_conditions_perValue(X,y,n,alpha,w,b,i)
         end
     end
     return satified
+end
+# full stopping conditions
+function stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,iter,max_iter,stop_flag)
+    if KKT_conditions(X,y,n,alpha,w,b)
+        testErr[iter:end] .= testErr[iter]
+        trainErr[iter:end] .= trainErr[iter]
+        println("KKT conditions satified")
+        satified = true
+    elseif iter >= max_iter
+        testErr[iter:end] .= testErr[iter]
+        trainErr[iter:end] .= trainErr[iter]
+        println("exceeded max iterations")
+        satified = true
+    elseif stop_flag == 1
+        testErr[iter:end] .= testErr[iter]
+        trainErr[iter:end] .= trainErr[iter]
+        println("reached stopping tolerance")
+        satified = true
+    else
+        satified = false
+    end
+    # now return
+    return satified, testErr, trainErr
 end

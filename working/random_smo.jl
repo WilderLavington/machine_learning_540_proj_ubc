@@ -15,7 +15,7 @@ function resrndint(b, z)
             return vals[i]
         end
     end
-    print("error in ur codes ~ 26")
+    print("error in ur codes ~ 18")
     return 0
 end
 
@@ -26,11 +26,13 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
     # Initializations
     n, d = size(X)
     alpha = zeros(n)
+
     # data storage
     trainErr = zeros(Int(max_iter))
     testErr = zeros(Int(max_iter))
     # count for maxing out iterations
     count_ = 1
+
     # Compute model parameters
     sv = findall((alpha .> 0) .& (alpha .< C))
     w = transpose(X) * (alpha.*y)
@@ -39,6 +41,7 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
     else
         b = 0
     end
+
     # pre-compute hessian
     H = (y * y').*(X * X')
     # pre-compute number of blocks
@@ -46,32 +49,30 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
 
     # Evaluation
     trainErr[count_] = 0.5*alpha'*(H)*alpha - sum(alpha)
-    testErrRate = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
-    testErr[count_] = testErrRate
+    testErr[count_] = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
 
     # print info
     if print_info_
         print_info(count_, trainErr[count_], testErr[count_])
     end
 
-
     # primary loop
     while true
         count_ += 1
 
         # get random integer between 0, and n-1 != j
-        j = rand(1:n)
-        i = resrndint(n, j)
+        i = rand(1:n)
+        j = resrndint(n, i)
 
         # compute gradient
         g = H * alpha - ones(size(y))
 
         # evaluate SMO rule
-        obj_val, a_i, a_j = smo_block([i,j], alpha, X, y, C, H, g, kernel, w, b)
+        alpha_prime_i, alpha_prime_j = smo_block([i,j], alpha, X, y, C, H, g, kernel, w, b)
 
         # update alphas
-        alpha[i] = a_i
-        alpha[j] = a_j
+        alpha[i] = alpha_prime_i
+        alpha[j] = alpha_prime_j
 
         # Compute model parameters
         sv = findall((alpha .> 0) .& (alpha .< C))
@@ -84,27 +85,21 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
 
         # Evaluation
         trainErr[count_] = 0.5*alpha'*(H)*alpha - sum(alpha)
-        testErrRate = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
-        testErr[count_] = testErrRate
+        testErr[count_] = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
 
         # print info
         if print_info_
             print_info(count_, trainErr[count_], testErr[count_])
         end
 
-        # evaluate KKT conditions
-        satified = KKT_conditions(X,y,n,alpha,w,b)
-
         # stopping condistions
+        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,0)
+
+        # check if we should stop
         if satified
-            testErr[count_:end] .= testErr[count_]
-            trainErr[count_:end] .= trainErr[count_]
-            println("KKT conditions satified")
-            break
-        elseif count_ >= max_iter
-            println("exceeded max iterations")
             break
         end
+
     end
     # find a support vector
     sv = findall((alpha .> 0) .& (alpha .< C))[1]

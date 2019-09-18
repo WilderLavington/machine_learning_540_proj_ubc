@@ -15,6 +15,9 @@ include("smo.jl")
 # Min over block
 function approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H, kernel, w_old, b_old)
 
+    # init minimum
+    n, d = size(X)
+
     # randomize block order
     eval_order = shuffle(collect(1:number_of_blocks))
 
@@ -23,14 +26,38 @@ function approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H
 
     # get a random block as starting point
     best_block = blocks[eval_order[1],:]
-    min_val, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, approx_H, g, kernel, w_old, b_old)
+    i, j = Int(best_block[1]),Int(best_block[2])
+
+    # get the updates from this point
+    alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, approx_H, g, kernel, w_old, b_old)
+
+    # get gradient
+    g_b = g[[i, j]]
+    # compute d
+    d_b = [alpha_i-alpha[i], alpha_j-alpha[j]]
+    # compute H
+    H_b = [H[i, i] H[i, j]; H[j, i] H[j, j]]
+    # get value
+    min_val = g_b'*d_b + (d_b'*H_b*d_b) / 2
 
     # iterate through blocks
     for i = 2:number_of_blocks
         # pick blocks in random order
         current_block = blocks[eval_order[i],:]
+        i, j = Int(current_block[1]),Int(current_block[2])
+
         # evaluate SMO rule
-        obj_val, _, _ = smo_block(current_block, alpha, X, y, C, approx_H,  g, kernel, w_old, b_old)
+        alpha_prime_i, alpha_prime_j = smo_block(current_block, alpha, X, y, C, approx_H, g, kernel, w_old, b_old)
+
+        # get gradient
+        g_b = g[[i, j]]
+        # compute d
+        d_b = [alpha_i-alpha[i], alpha_j-alpha[j]]
+        # compute H
+        H_b = [H[i, i] H[i, j]; H[j, i] H[j, j]]
+        # get value
+        obj_val = g_b'*d_b + (d_b'*H_b*d_b) / 2
+
         # check if we need to update
         if min_val > obj_val
             # update min value found
@@ -39,10 +66,15 @@ function approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H
             best_block = current_block
         end
     end
+
     # compute the exact update
-    _, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
+    alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
+
+    # set stopping flag
+    stop_flag = 1*(min_val == 0.)
+
     # return info
-    return best_block, alpha_i, alpha_j
+    return best_block, alpha_i, alpha_j, stop_flag
 end
 
 # Fit function
@@ -82,8 +114,7 @@ function fit_gsq_approx_1(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
 
     # Evaluation
     trainErr[count_] = 0.5*alpha'*(H)*alpha - sum(alpha)
-    testErrRate = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
-    testErr[count_] = testErrRate
+    testErr[count_] = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
 
     # print info
     if print_info_
@@ -97,7 +128,7 @@ function fit_gsq_approx_1(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
         count_ += 1
 
         # compute best block
-        best_block, alpha_i, alpha_j = approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H, kernel, w, b)
+        best_block, alpha_i, alpha_j, stop_flag = approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H, kernel, w, b)
 
         # Set new alpha values
         alpha[Int(best_block[1])] = alpha_i
@@ -114,31 +145,31 @@ function fit_gsq_approx_1(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
 
         # Evaluation
         trainErr[count_] = 0.5*alpha'*(H)*alpha - sum(alpha)
-        testErrRate = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
-        testErr[count_] = testErrRate
+        testErr[count_] = sum((predict(X_test, w, b) .!= y_test))/size(y)[1]
 
         # print info
         if print_info_
             print_info(count_, trainErr[count_], testErr[count_])
         end
 
-        # evaluate KKT conditions
-        satified = KKT_conditions(X,y,n,alpha,w,b)
-
         # stopping condistions
+        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,stop_flag)
+
+        # check if we should stop
         if satified
-            println("KKT conditions satified")
             break
-        elseif count_ >= max_iter
-            println("exceeded max iterations")
-            return trainErr, testErr, count_, sv, w, b
         end
     end
-    # find a support vector
-    sv = findall((alpha .> 0) .& (alpha .< C))[1]
-    # Compute model parameters
+
+    # compute parameters
+    sv = findall((alpha .> 0) .& (alpha .< C))
     w = transpose(X) * (alpha.*y)
-    b = transpose(w) * X[sv,:] - y[sv]
+    if length(sv) > 0
+        b = transpose(w) * X[sv[1],:] - y[sv[1]]
+    else
+        b = 0
+    end
+
     # Get support vectors
     alpha_idx = findall((alpha .> 0) .& (alpha .< C))
     support_vectors = X[alpha_idx, :]

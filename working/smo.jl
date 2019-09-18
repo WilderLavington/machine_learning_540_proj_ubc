@@ -40,15 +40,7 @@ function smo_block(block, alpha, X, y, C, H, g, kernel, w_old, b_old)
         alpha_prime_j = min(alpha_prime_j, U)
         # find alpha 1
         alpha_prime_i = alpha_i + y_i*y_j * (alpha_j - alpha_prime_j)
-        # get gradient
-        g_b = g[[i, j]]
-        # compute d
-        d_b = [alpha_prime_i-alpha_i, alpha_prime_j-alpha_j]
-        # compute H
-        H_b = [H[i, i] H[i, j]; H[j, i] H[j, j]]
-        # value
-        min_val = g_b'*d_b + (d_b'*H_b*d_b) / 2
         # return
-        return min_val, alpha_prime_i, alpha_prime_j
+        return alpha_prime_i, alpha_prime_j
     end
 end
