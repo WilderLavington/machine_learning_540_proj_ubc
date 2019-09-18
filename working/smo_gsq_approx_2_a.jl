@@ -21,37 +21,38 @@ function approx_gsq_rule_2_a(blocks, number_of_blocks, alpha, X, y, C, H, kernel
     # check that there are not multiples
     if length(coord_1) >= 1
         eval_order = shuffle(collect(1:length(coord_1)))
-        coord_1 = coord_1[eval_order[1]]
+        coord_1 = viable_indices[coord_1[eval_order[1]]]
     end
-
     # now reshuffle eval order
     eval_order = shuffle(collect(1:n))
     # init new alpha updates
     best_block = [coord_1, eval_order[1]]
-    alpha_i, alpha_j = alpha[coord_1], alpha[eval_order[1]]
-    min_val, obj_val = Inf, Inf
+    obj_val, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
+    min_val = obj_val
 
     # iterate through blocks
     for i = eval_order
-        # pick blocks in random order
-        current_block = [coord_1, i]
-        # evaluate SMO rule
-        obj_val, a_i, a_j = smo_block(current_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
-        # check if we need to update
-        if min_val > obj_val
-            # update alphas
-            alpha_i, alpha_j = a_i, a_j
-            # update min value found
-            min_val = obj_val
-            # best block
-            best_block = current_block
-        elseif (min_val == Inf) & (obj_val == Inf)
-            # update alphas
-            alpha_i, alpha_j = a_i, a_j
-            # update min value found
-            min_val = obj_val
-            # best block
-            best_block = current_block
+        if coord_1 != i
+            # pick blocks in random order
+            current_block = [coord_1, i]
+            # evaluate SMO rule
+            obj_val, a_i, a_j = smo_block(current_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
+            # check if we need to update
+            if min_val > obj_val
+                # update alphas
+                alpha_i, alpha_j = a_i, a_j
+                # update min value found
+                min_val = obj_val
+                # best block
+                best_block = current_block
+            elseif (min_val == Inf) & (obj_val == Inf)
+                # update alphas
+                alpha_i, alpha_j = a_i, a_j
+                # update min value found
+                min_val = obj_val
+                # best block
+                best_block = current_block
+            end
         end
     end
     # return info
@@ -74,37 +75,43 @@ function approx_gsq_rule_2_b(blocks, number_of_blocks, alpha, X, y, C, H, kernel
     # check that there are not multiples
     if length(coord_1) >= 1
         eval_order = shuffle(collect(1:length(coord_1)))
-        coord_1 = coord_1[eval_order[1]]
+        coord_1 = viable_indices[coord_1[eval_order[1]]]
     end
-
     # now reshuffle eval order
     eval_order = shuffle(collect(1:n))
     # init new alpha updates
-    best_block = [coord_1, eval_order[1]]
-    alpha_i, alpha_j = alpha[coord_1], alpha[eval_order[1]]
-    min_val, obj_val = Inf, Inf
-
+    if coord_1 != eval_order[1]
+        best_block = [coord_1, eval_order[1]]
+        obj_val, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
+        min_val = obj_val
+    else
+        best_block = [coord_1, eval_order[2]]
+        obj_val, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
+        min_val = obj_val
+    end
     # iterate through blocks
     for i = eval_order
-        # pick blocks in random order
-        current_block = [coord_1, i]
-        # evaluate SMO rule
-        obj_val, a_i, a_j = smo_block(current_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
-        # check if we need to update
-        if min_val > obj_val
-            # update alphas
-            alpha_i, alpha_j = a_i, a_j
-            # update min value found
-            min_val = obj_val
-            # best block
-            best_block = current_block
-        elseif (min_val == Inf) & (obj_val == Inf)
-            # update alphas
-            alpha_i, alpha_j = a_i, a_j
-            # update min value found
-            min_val = obj_val
-            # best block
-            best_block = current_block
+        if coord_1 != i
+            # pick blocks in random order
+            current_block = [coord_1, i]
+            # evaluate SMO rule
+            obj_val, a_i, a_j = smo_block(current_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
+            # check if we need to update
+            if min_val > obj_val
+                # update alphas
+                alpha_i, alpha_j = a_i, a_j
+                # update min value found
+                min_val = obj_val
+                # best block
+                best_block = current_block
+            elseif (min_val == Inf) & (obj_val == Inf)
+                # update alphas
+                alpha_i, alpha_j = a_i, a_j
+                # update min value found
+                min_val = obj_val
+                # best block
+                best_block = current_block
+            end
         end
     end
     # return info

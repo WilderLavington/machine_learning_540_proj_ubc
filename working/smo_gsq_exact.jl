@@ -14,12 +14,9 @@ include("smo.jl")
 
 # Min over block
 function gsq_rule(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w_old, b_old)
-    # init minimum
-    min_val = Inf
 
-    # init new alpha updates
-    alpha_i, alpha_j = 0, 0
-    best_block = [1,1]
+    # init minimum
+    n, d = size(X)
 
     # randomize block order
     eval_order = shuffle(collect(1:number_of_blocks))
@@ -27,8 +24,12 @@ function gsq_rule(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w_old, b_
     # compute gradient
     g = H * alpha - ones(size(y))
 
+    # get a random block as starting point
+    best_block = blocks[eval_order[1],:]
+    min_val, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H, g, kernel, w_old, b_old)
+
     # iterate through blocks
-    for i = 1:number_of_blocks
+    for i = 2:number_of_blocks
         # pick blocks in random order
         current_block = blocks[eval_order[i],:]
         # evaluate SMO rule
@@ -43,7 +44,8 @@ function gsq_rule(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w_old, b_
             best_block = current_block
         end
     end
-    #print(best_block)
+    println(min_val)
+    # println(best_block)
     return best_block, alpha_i, alpha_j
 end
 
@@ -98,9 +100,17 @@ function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print
         # compute best block
         best_block, alpha_i, alpha_j = gsq_rule(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w, b)
 
+        # println("starting")
+        # println(KKT_conditions_perValue(X,y,n,alpha,w,b,Int(best_block[1])))
+        # println(KKT_conditions_perValue(X,y,n,alpha,w,b,Int(best_block[2])))
+
         # Set new alpha values
         alpha[Int(best_block[1])] = alpha_i
         alpha[Int(best_block[2])] = alpha_j
+
+        # println("and now")
+        # println(KKT_conditions_perValue(X,y,n,alpha,w,b,Int(best_block[1])))
+        # println(KKT_conditions_perValue(X,y,n,alpha,w,b,Int(best_block[2])))
 
         # re-compute model parameters
         sv = findall((alpha .> 0) .& (alpha .< C))

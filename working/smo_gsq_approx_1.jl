@@ -14,17 +14,19 @@ include("smo.jl")
 
 # Min over block
 function approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H, kernel, w_old, b_old)
-    # init minimum
-    min_val = Inf
-    # init new alpha updates
-    alpha_i, alpha_j = 0, 0
-    best_block = [1,1]
+
     # randomize block order
     eval_order = shuffle(collect(1:number_of_blocks))
+
     # compute gradient
     g = H * alpha - ones(size(y))
+
+    # get a random block as starting point
+    best_block = blocks[eval_order[1],:]
+    min_val, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, approx_H, g, kernel, w_old, b_old)
+
     # iterate through blocks
-    for i = 1:number_of_blocks
+    for i = 2:number_of_blocks
         # pick blocks in random order
         current_block = blocks[eval_order[i],:]
         # evaluate SMO rule

@@ -6,13 +6,13 @@ include("smo.jl")
 include("helper_fxns.jl")
 
 # get random integer other then current
-function resrndint(a, b, z)
+function resrndint(b, z)
     i = z
     count = 0
-    vals = randperm(b-a)
-    for i = 1:(b-a)
-        if vals[i+a] != z
-            return vals[i+a]
+    vals = randperm(b)
+    for i = 1:(b)
+        if vals[i] != z
+            return vals[i]
         end
     end
     print("error in ur codes ~ 26")
@@ -61,10 +61,10 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
 
         # get random integer between 0, and n-1 != j
         j = rand(1:n)
-        i = resrndint(0, n-1, j)
+        i = resrndint(n, j)
 
         # compute gradient
-        g = (y * y').*(X * X') * alpha - ones(size(y))
+        g = H * alpha - ones(size(y))
 
         # evaluate SMO rule
         obj_val, a_i, a_j = smo_block([i,j], alpha, X, y, C, H, g, kernel, w, b)

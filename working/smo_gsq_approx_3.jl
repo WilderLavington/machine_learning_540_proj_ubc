@@ -26,7 +26,7 @@ function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kerne
     g = H * alpha - ones(n)
 
     # pick the first coordinate by largest gradient not equal to
-    viable_indices = findall(((g .> 0) .& (alpha .>= C)) .| ((g .< 0) .& (alpha .<= 0.)) .| ((alpha .< C) .& (alpha .> 0.)))
+    viable_indices = findall(((g .> 0) .& (alpha .== C)) .| ((g .< 0) .& (alpha .== 0.)) .| (((alpha .< C) .& (alpha .> 0.)) .& (g .!= 0.)))
 
     # set the values we can actually update
     viable_g = g[viable_indices]
@@ -38,7 +38,7 @@ function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kerne
 
     # get max coordinates
     coords = findall(diff_mat .== maximum(diff_mat))
-
+    
     # shuffle
     eval_order = shuffle(collect(1:length(coords)))
 
@@ -50,7 +50,7 @@ function approx_gsq_rule_3(blocks, number_of_blocks, alpha, X, y, C, H, L, kerne
     best_block = [coord_1, coord_2]
 
     # compute the exact update
-    _, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
+    obj, alpha_i, alpha_j = smo_block(best_block, alpha, X, y, C, H,  g, kernel, w_old, b_old)
 
     # return info
     return best_block, alpha_i, alpha_j

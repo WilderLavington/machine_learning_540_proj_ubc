@@ -113,3 +113,24 @@ function KKT_conditions(X,y,n,alpha,w,b)
     end
     return satified
 end
+
+# kkt conditions for a given example
+function KKT_conditions_perValue(X,y,n,alpha,w,b,i)
+    # Check convergence via KKT
+    satified = true
+    pred = X*w .- b
+    if alpha[i] == 0
+        if !(pred[i]*y[i] >= 1 - epsilon)
+            satified = false
+        end
+    elseif alpha[i] == C
+        if !(pred[i]*y[i] <= 1 + epsilon)
+            satified = false
+        end
+    else
+        if !(pred[i]*y[i] >= 1 - epsilon) & (pred[i]*y[i] <= 1 + epsilon)
+            satified = false
+        end
+    end
+    return satified
+end
