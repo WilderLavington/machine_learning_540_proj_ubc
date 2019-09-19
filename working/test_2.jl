@@ -4,7 +4,7 @@ include("./smo_gsq_exact.jl")
 include("./smo_gsq_approx_1.jl")
 include("./smo_gsq_approx_2.jl")
 include("./smo_gsq_approx_3.jl")
-# include("./smo_gsq_approx_4.jl")
+include("./smo_gsq_approx_4.jl")
 include("./smo_gsq_approx_5.jl")
 
 using Random
@@ -14,7 +14,7 @@ using Statistics
 
 function average_everything()
     # number of iterations
-    max_iter = 5e4
+    max_iter = 1e4
 
     # set up averages for training loss
     trainErr_1_avg = zeros(Int(max_iter))
@@ -66,11 +66,11 @@ function average_everything()
         println("exact")
         println(count_2, ", ", support_vectors_2)
         # first approximation H = L * I
-        trainErr_3, testErr_3, count_3, support_vectors_3 = fit_gsq_approx_1(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
-        trainErr_3_avg += trainErr_3
-        testErr_3_avg += testErr_3
-        println("H = diag(H)")
-        println(count_3, ", ", support_vectors_3)
+        # trainErr_3, testErr_3, count_3, support_vectors_3 = fit_gsq_approx_1(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+        # trainErr_3_avg += trainErr_3
+        # testErr_3_avg += testErr_3
+        # println("H = L*I")
+        # println(count_3, ", ", support_vectors_3)
         # # second
         # trainErr_4, testErr_4, count_4, support_vectors_4 = fit_gsq_approx_2(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         # trainErr_4_avg += trainErr_4
@@ -84,15 +84,16 @@ function average_everything()
         # println("2 - step: choose based on (f'_i - f'_j)^2 / (L[i] - L[j]) ")
         # println(count_5,", ", support_vectors_5)
         # fourth
-        # trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_4(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
-        # trainErr_5_avg += trainErr_5
-        # testErr_5_avg += testErr_5
-        # println(count_5, support_vectors_5)
+        trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_4(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+        trainErr_5_avg += trainErr_5
+        testErr_5_avg += testErr_5
+        println("H = diag(H)")
+        println(count_5, support_vectors_5)
         # fifth
         # trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_5(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false, 200)
         # trainErr_5_avg += trainErr_5
         # testErr_5_avg += testErr_5
-        println("random exact")
+        # println("random exact")
         # println(count_5, support_vectors_5)
     end
 end
