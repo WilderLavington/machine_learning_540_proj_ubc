@@ -53,13 +53,13 @@ function average_everything()
         kernal_func = linear_kernal
 
         println("iteration: ", i)
-        # random
-        trainErr_1, testErr_1, count_1, support_vectors_1 = fit_gsq_random(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
-        trainErr_1_avg += trainErr_1
-        testErr_1_avg += testErr_1
-        println("random")
-        println(count_1, ", ", support_vectors_1)
-        # exact
+        # # random
+        # trainErr_1, testErr_1, count_1, support_vectors_1 = fit_gsq_random(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+        # trainErr_1_avg += trainErr_1
+        # testErr_1_avg += testErr_1
+        # println("random")
+        # println(count_1, ", ", support_vectors_1)
+        # # exact
         trainErr_2, testErr_2, count_2, support_vectors_2 = fit_gsq_exact(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         trainErr_2_avg += trainErr_2
         testErr_2_avg += testErr_2
@@ -71,28 +71,29 @@ function average_everything()
         testErr_3_avg += testErr_3
         println("H = diag(H)")
         println(count_3, ", ", support_vectors_3)
-        # second
-        trainErr_4, testErr_4, count_4, support_vectors_4 = fit_gsq_approx_2(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
-        trainErr_4_avg += trainErr_4
-        testErr_4_avg += testErr_4
-        println("2 - step: choose max/min, then apply gs-q")
-        println(count_4,", ", support_vectors_4)
-        # third
-        trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_3(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
-        trainErr_5_avg += trainErr_5
-        testErr_5_avg += testErr_5
-        println("2 - step: choose based on (f'_i - f'_j)^2 / (L[i] - L[j]) ")
-        println(count_5,", ", support_vectors_5)
+        # # second
+        # trainErr_4, testErr_4, count_4, support_vectors_4 = fit_gsq_approx_2(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+        # trainErr_4_avg += trainErr_4
+        # testErr_4_avg += testErr_4
+        # println("2 - step: choose max/min, then apply gs-q")
+        # println(count_4,", ", support_vectors_4)
+        # # third
+        # trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_3(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+        # trainErr_5_avg += trainErr_5
+        # testErr_5_avg += testErr_5
+        # println("2 - step: choose based on (f'_i - f'_j)^2 / (L[i] - L[j]) ")
+        # println(count_5,", ", support_vectors_5)
         # fourth
         # trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_4(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         # trainErr_5_avg += trainErr_5
         # testErr_5_avg += testErr_5
         # println(count_5, support_vectors_5)
         # fifth
-        trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_5(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false, 200)
-        trainErr_5_avg += trainErr_5
-        testErr_5_avg += testErr_5
-        println(count_5, support_vectors_5)
+        # trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_5(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false, 200)
+        # trainErr_5_avg += trainErr_5
+        # testErr_5_avg += testErr_5
+        println("random exact")
+        # println(count_5, support_vectors_5)
     end
 end
 average_everything()
