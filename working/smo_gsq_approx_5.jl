@@ -48,7 +48,6 @@ function approx_gsq_rule_5(blocks, number_of_blocks, alpha, X, y, C, H, kernel, 
         H_b = [H[i, i] H[i, j]; H[j, i] H[j, j]]
         # value
         obj_val = g_b'*d_b + (d_b'*H_b*d_b) / 2
-
         # check if we need to update
         if min_val > obj_val
             # if so, replace the alpha parameters

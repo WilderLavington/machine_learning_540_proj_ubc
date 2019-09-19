@@ -84,7 +84,7 @@ function average_everything()
         # println("2 - step: choose based on (f'_i - f'_j)^2 / (L[i] - L[j]) ")
         # println(count_5,", ", support_vectors_5)
         # fourth
-        trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_4(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
+        trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_4(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, true)
         trainErr_5_avg += trainErr_5
         testErr_5_avg += testErr_5
         println("H = diag(H)")
