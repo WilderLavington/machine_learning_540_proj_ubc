@@ -86,11 +86,12 @@ function generate_blocks_i(n,i)
     return blocks
 end
 # kkt conditions
-function KKT_conditions(X,y,n,alpha,w,b)
+function KKT_conditions(X,y,n,alpha,w,b,C,epsilon)
     # Check convergence via KKT
     satified = true
     pred = X*w .- b
     for i = 1:n
+        # now check kkt
         if alpha[i] == 0
             if pred[i]*y[i] >= 1 - epsilon
                 continue
@@ -103,18 +104,20 @@ function KKT_conditions(X,y,n,alpha,w,b)
             else
                 satified = false
             end
-        else
+        elseif (alpha[i] < C) & (alpha[i] > 0)
             if (pred[i]*y[i] >= 1 - epsilon) & (pred[i]*y[i] <= 1 + epsilon)
                 continue
             else
                 satified = false
             end
+        else
+            println("something has gone terribly wrong")
         end
     end
     return satified
 end
 # kkt conditions for a given example
-function KKT_conditions_perValue(X,y,n,alpha,w,b,i)
+function KKT_conditions_perValue(X,y,n,alpha,w,b,i,C,epsilon)
     # Check convergence via KKT
     satified = true
     pred = X*w .- b
@@ -134,8 +137,17 @@ function KKT_conditions_perValue(X,y,n,alpha,w,b,i)
     return satified
 end
 # full stopping conditions
-function stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,iter,max_iter,stop_flag)
-    if KKT_conditions(X,y,n,alpha,w,b)
+function stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,iter,max_iter,C,epsilon,stop_flag)
+    # if there was some issue with numerical stability force the alphas back
+    if !all(alpha .>= 0) | !all(alpha .<= C)
+        alpha = (x -> round.(x,digits=12)).(alpha)
+    end
+    # check if numerical error persisted
+    if !all(alpha .>= 0) | !all(alpha .<= C)
+        println("numerical issues or implimentation error have occurred.")
+    end
+    # now check stopping conditions
+    if KKT_conditions(X,y,n,alpha,w,b,C,epsilon)
         testErr[iter:end] .= testErr[iter]
         trainErr[iter:end] .= trainErr[iter]
         println("KKT conditions satified")
@@ -154,5 +166,5 @@ function stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,iter,max_iter,stop
         satified = false
     end
     # now return
-    return satified, testErr, trainErr
+    return satified, testErr, trainErr, alpha
 end

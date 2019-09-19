@@ -93,7 +93,7 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
         end
 
         # stopping condistions
-        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,0)
+        satified, testErr, trainErr, alpha = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,C,epsilon,0)
 
         # check if we should stop
         if satified
@@ -102,12 +102,7 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
 
     end
     # find a support vector
-    sv = findall((alpha .> 0) .& (alpha .< C))[1]
-    # Compute model parameters
-    w = transpose(X) * (alpha.*y)
-    b = transpose(w) * X[sv,:] - y[sv]
-    # Get support vectors
-    alpha_idx = findall((alpha .> 0) .& (alpha .< C))
-    support_vectors = X[alpha_idx, :]
-    return trainErr, testErr, count_, support_vectors
+    sv = findall((alpha .> 0) .& (alpha .< C))
+    # return
+    return trainErr, testErr, count_, sv
 end

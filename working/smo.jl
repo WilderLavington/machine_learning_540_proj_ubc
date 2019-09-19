@@ -10,7 +10,7 @@ function smo_block(block, alpha, X, y, C, H, g, kernel, w_old, b_old)
     # pick the x and ys for the update
     x_i, x_j, y_i, y_j = X[i,:], X[j,:], y[i], y[j]
     # evaluate the kernal under these values
-    k_ij = kernel(x_i, x_i) + kernel(x_j, x_j) - 2 * kernel(x_i, x_j)
+    k_ij = H[i,i] + H[j,j] - 2 * H[i,j]
     # if the points are orthogonal pass on
     if k_ij == 0
         # get the current dual parameters
@@ -44,3 +44,5 @@ function smo_block(block, alpha, X, y, C, H, g, kernel, w_old, b_old)
         return alpha_prime_i, alpha_prime_j
     end
 end
+
+# joeys version

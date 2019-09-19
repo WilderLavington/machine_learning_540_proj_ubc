@@ -10,7 +10,7 @@ function compute_diff(grad, L)
     grad_diff = zeros(n, n)
     for i = 1:n
         for j = 1:n
-            grad_diff[i,j] = (grad[i] - grad[j])^2 / L[i]
+            grad_diff[i,j] = (grad[i] - grad[j])^2 / (L[i] + L[j])
         end
     end
     return grad_diff
@@ -138,7 +138,7 @@ function fit_gsq_approx_3(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
 
         # stopping condistions
 
-        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,(stop_flag < 1e-15))
+        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,C,epsilon,0)
 
         # check if we should stop
         if satified

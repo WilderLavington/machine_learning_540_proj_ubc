@@ -141,21 +141,15 @@ function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print
         end
 
         # stopping condistions
-        satified, testErr, trainErr = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,stop_flag)
+        satified, testErr, trainErr, alpha = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,C,epsilon,stop_flag)
 
         # check if we should stop
         if satified
             break
         end
     end
-    # find a support vector
-    sv = findall((alpha .> 0) .& (alpha .< C))[1]
     # Compute model parameters
-    w = transpose(X) * (alpha.*y)
-    b = transpose(w) * X[sv,:] - y[sv]
-    # Get support vectors
-    alpha_idx = findall((alpha .> 0) .& (alpha .< C))
-    support_vectors = X[alpha_idx, :]
+    sv = findall((alpha .> 0) .& (alpha .< C))
     # return it all
-    return 1, 1, count_, support_vectors, w, b
+    return trainErr, testErr, count_, sv
 end
