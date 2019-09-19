@@ -107,7 +107,7 @@ function fit_gsq_approx_1(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
     H = (y * y').*(X * X')
 
     # pre_compute approx hessian
-    approx_H = diagnolize(H) / 2
+    approx_H = norm(H,Inf) * Diagonal(ones(size(H))) # Diagonal(H) / 2
 
     # pre-compute number of blocks
     number_of_blocks, _ = size(blocks)

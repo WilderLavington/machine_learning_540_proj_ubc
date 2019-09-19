@@ -18,8 +18,6 @@ function smo_block(block, alpha, X, y, C, H, g, kernel, w_old, b_old)
         # Compute model parameters
         alpha_prime_i = alpha_i
         alpha_prime_j = alpha_j
-        println("unlikely")
-        println(i, j)
         # this is a degenerate point
         return Inf, alpha_prime_i, alpha_prime_j
     else

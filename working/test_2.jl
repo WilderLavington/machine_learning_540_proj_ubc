@@ -58,31 +58,31 @@ function average_everything()
         trainErr_1_avg += trainErr_1
         testErr_1_avg += testErr_1
         println("random")
-        println(count_1, support_vectors_1)
+        println(count_1, ", ", support_vectors_1)
         # exact
         trainErr_2, testErr_2, count_2, support_vectors_2 = fit_gsq_exact(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         trainErr_2_avg += trainErr_2
         testErr_2_avg += testErr_2
         println("exact")
-        println(count_2, support_vectors_2)
+        println(count_2, ", ", support_vectors_2)
         # first approximation H = L * I
         trainErr_3, testErr_3, count_3, support_vectors_3 = fit_gsq_approx_1(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         trainErr_3_avg += trainErr_3
         testErr_3_avg += testErr_3
         println("H = diag(H)")
-        println(count_3, support_vectors_3)
+        println(count_3, ", ", support_vectors_3)
         # second
         trainErr_4, testErr_4, count_4, support_vectors_4 = fit_gsq_approx_2(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         trainErr_4_avg += trainErr_4
         testErr_4_avg += testErr_4
         println("2 - step: choose max/min, then apply gs-q")
-        println(count_4, support_vectors_4)
+        println(count_4,", ", support_vectors_4)
         # third
         trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_3(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         trainErr_5_avg += trainErr_5
         testErr_5_avg += testErr_5
-        println("2 - step: choose max/min, then apply gs-q")
-        println(count_5, support_vectors_5)
+        println("2 - step: choose based on (f'_i - f'_j)^2 / (L[i] - L[j]) ")
+        println(count_5,", ", support_vectors_5)
         # fourth
         # trainErr_5, testErr_5, count_5, support_vectors_5 = fit_gsq_approx_4(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false)
         # trainErr_5_avg += trainErr_5
