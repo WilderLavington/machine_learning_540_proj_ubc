@@ -52,7 +52,7 @@ function approx_gsq_rule_1(blocks, number_of_blocks, alpha, X, y, C, H, approx_H
         # get gradient
         g_b = g[[i, j]]
         # compute d
-        d_b = [alpha_i-alpha[i], alpha_j-alpha[j]]
+        d_b = [alpha_prime_i-alpha[i], alpha_prime_j-alpha[j]]
         # compute H
         H_b = [approx_H[i, i] approx_H[i, j]; approx_H[j, i] approx_H[j, j]]
         # get value

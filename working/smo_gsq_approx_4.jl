@@ -52,14 +52,14 @@ function approx_gsq_rule_4(blocks, number_of_blocks, alpha, X, y, C, H, approx_H
         # get gradient
         g_b = g[[i, j]]
         # compute d
-        d_b = [alpha_i-alpha[i], alpha_j-alpha[j]]
+        d_b = [alpha_prime_i-alpha[i], alpha_prime_j-alpha[j]]
         # compute H
         H_b = [approx_H[i, i] approx_H[i, j]; approx_H[j, i] approx_H[j, j]]
         # get value
         obj_val = g_b'*d_b + (d_b'*H_b*d_b) / 2
 
         # check if we need to update
-        if min_val > obj_val
+        if (min_val > obj_val) & (d_b'*d_b > 0.)
             # update min value found
             min_val = obj_val
             # best block
@@ -72,19 +72,6 @@ function approx_gsq_rule_4(blocks, number_of_blocks, alpha, X, y, C, H, approx_H
 
     # set stopping flag
     stop_flag = 1*(min_val == 0.)
-    println("update under H approx")
-    println(min_val)
-
-    # get gradient
-    g_b = g[[i, j]]
-    # compute d
-    d_b = [alpha_i-alpha[i], alpha_j-alpha[j]]
-    # compute H
-    H_b = [H[i, i] H[i, j]; H[j, i] H[j, j]]
-    # get value
-    min_val = g_b'*d_b + (d_b'*H_b*d_b) / 2
-    println("update under H exact")
-    println(min_val)
 
     # return info
     return best_block, alpha_i, alpha_j, 0
@@ -120,7 +107,7 @@ function fit_gsq_approx_4(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
     H = (y * y').*(X * X')
 
     # pre_compute approx hessian
-    # approx_H =  diagm(map(x->maximum(H[x,:]), [i for i = 1:size(H)[1]]))
+    # approx_H =  diagm(map(x->sum(abs.(H[x,:])), [i for i = 1:size(H)[1]]))
     approx_H = 2 * Diagonal(H)
 
     # pre-compute number of blocks
@@ -143,8 +130,6 @@ function fit_gsq_approx_4(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
 
         # compute best block
         best_block, alpha_i, alpha_j, stop_flag = approx_gsq_rule_4(blocks, number_of_blocks, alpha, X, y, C, H, approx_H, kernel, w, b)
-        println(best_block)
-        println(alpha_i, ", ", alpha_j)
         # println(best_block)
         # Set new alpha values
         alpha[Int(best_block[1])] = alpha_i
