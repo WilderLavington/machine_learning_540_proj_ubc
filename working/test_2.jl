@@ -11,6 +11,7 @@ using Random
 using LinearAlgebra
 using Statistics
 using Plots
+using CSV
 
 function average_everything()
     # number of iterations
@@ -43,6 +44,15 @@ function average_everything()
 
     for i = 1:averaging
 
+        # read real dataset
+        df = CSV.read("australian.csv")
+        data = convert(Matrix, df)
+        X_fake = data[:,2:size(data)[2]]
+        y_fake = data[:,1:1]
+
+        X_faket = X_fake
+        y_faket = y_fake
+        '''
         # generate a new random set of data
         X_fake = rand(100,2)
         X_fake[1:50,:] = X_fake[1:50,:] - 1*rand(50,2)
@@ -54,6 +64,7 @@ function average_everything()
         X_faket[1:50,:] = X_faket[1:50,:] - 1*rand(50,2)
         y_faket = ones(100)
         y_faket[1:50] = -1*ones(50)
+        '''
 
         # hyper parameters
         C = 1.0
