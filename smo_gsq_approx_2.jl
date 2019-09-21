@@ -86,7 +86,7 @@ function approx_gsq_rule_2_a(blocks, number_of_blocks, alpha, X, y, C, H, kernel
     # set stopping flag
     stop_flag = 1*(min_val == 0.)
     # return info
-    return best_block, alpha_i, alpha_j, stop_flag
+    return best_block, alpha_i, alpha_j, stop_flag, min_val
 end
 
 # Min grad over block
@@ -170,7 +170,7 @@ function approx_gsq_rule_2_b(blocks, number_of_blocks, alpha, X, y, C, H, kernel
     # set stopping flag
     stop_flag = 1*(min_val == 0.)
     # return info
-    return best_block, alpha_i, alpha_j, stop_flag
+    return best_block, alpha_i, alpha_j, stop_flag, min_val
 end
 
 # Fit function
@@ -221,20 +221,21 @@ function fit_gsq_approx_2(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
         count_ += 1
 
         # compute best block
-        best_block, alpha_i, alpha_j, stop_flag_1 = approx_gsq_rule_2_a(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w, b)
-
-        # Set new alpha values
-        alpha[Int(best_block[1])] = alpha_i
-        alpha[Int(best_block[2])] = alpha_j
-
-        count_ += 1
-
+        best_block_a, alpha_i_a, alpha_j_a, stop_flag_a, min_val_a = approx_gsq_rule_2_a(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w, b)
         # compute best block
-        best_block, alpha_i, alpha_j, stop_flag_2 = approx_gsq_rule_2_b(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w, b)
+        best_block_b, alpha_i_b, alpha_j_b, stop_flag_b, min_val_b = approx_gsq_rule_2_b(blocks, number_of_blocks, alpha, X, y, C, H, kernel, w, b)
+
 
         # Set new alpha values
-        alpha[Int(best_block[1])] = alpha_i
-        alpha[Int(best_block[2])] = alpha_j
+        if min_val_a < min_val_b
+            alpha[Int(best_block_a[1])] = alpha_i_a
+            alpha[Int(best_block_a[2])] = alpha_j_a
+            stop_flag = stop_flag_a
+        else
+            alpha[Int(best_block_b[1])] = alpha_i_b
+            alpha[Int(best_block_b[2])] = alpha_j_b
+            stop_flag = stop_flag_b
+        end
 
         # re-compute model parameters
         sv = findall((alpha .> 0) .& (alpha .< C))
@@ -255,7 +256,6 @@ function fit_gsq_approx_2(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
         end
 
         # stopping condistions
-        stop_flag = stop_flag_1*stop_flag_2
         satified, testErr, trainErr, alpha = stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,count_,max_iter,C,epsilon,stop_flag)
 
         # check if we should stop

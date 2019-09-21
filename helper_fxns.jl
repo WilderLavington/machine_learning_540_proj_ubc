@@ -140,7 +140,7 @@ end
 function stopping_conditions(testErr,trainErr,X,y,n,alpha,w,b,iter,max_iter,C,epsilon,stop_flag)
     # if there was some issue with numerical stability force the alphas back
     if !all(alpha .>= 0) | !all(alpha .<= C)
-        alpha = (x -> round.(x,digits=12)).(alpha)
+        alpha = (x -> round.(x,digits=14)).(alpha)
     end
     # check if numerical error persisted
     if !all(alpha .>= 0) | !all(alpha .<= C)
