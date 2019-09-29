@@ -148,8 +148,6 @@ function fit_gsq_exact(X, y, X_test, y_test, kernel, C, epsilon, max_iter, print
             break
         end
     end
-    # Compute model parameters
-    sv = findall((alpha .> 0) .& (alpha .< C))
     # return it all
-    return trainErr, testErr, count_, sv
+    return trainErr, testErr, count_, alpha
 end

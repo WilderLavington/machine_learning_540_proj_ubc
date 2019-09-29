@@ -101,8 +101,6 @@ function fit_gsq_random(X, y, X_test, y_test, kernel, C, epsilon, max_iter, prin
         end
 
     end
-    # find a support vector
-    sv = findall((alpha .> 0) .& (alpha .< C))
     # return
-    return trainErr, testErr, count_, sv
+    return trainErr, testErr, count_, alpha
 end
