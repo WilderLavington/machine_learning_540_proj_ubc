@@ -68,6 +68,9 @@ function fit_gsq_approx_5(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
     # generate all blocks
     blocks = generate_blocks(length(y))
 
+    # clip samples
+    samples = min(samples, size(blocks, 1))
+
     # Initializations
     n, d = size(X)
     alpha = zeros(n)
@@ -109,7 +112,7 @@ function fit_gsq_approx_5(X, y, X_test, y_test, kernel, C, epsilon, max_iter, pr
         # get asubset of blocks
         rows = randperm(size(blocks, 1))
         sample_blocks = blocks[rows[1:samples],:]
-
+        
         # compute best block
         best_block, alpha_i, alpha_j, stop_flag = approx_gsq_rule_5(sample_blocks, samples, alpha, X, y, C, H, kernel, w, b)
 
