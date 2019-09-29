@@ -6,12 +6,34 @@ include("./smo_gsq_approx_2.jl")
 include("./smo_gsq_approx_3.jl")
 include("./smo_gsq_approx_4.jl")
 include("./smo_gsq_approx_5.jl")
+# new method
+include("./two_metric_projection_svm.jl")
+
 
 using Random
 using LinearAlgebra
 using Statistics
 using Plots
 using CSV
+
+# generate random data
+function data_set_0()
+
+    # generate a new random set of data
+    X_fake = rand(10,2)
+    X_fake[1:5,:] = X_fake[1:5,:] - 3*rand(5,2)
+    y_fake = ones(10)
+    y_fake[1:5] = -1*ones(5)
+
+    # use
+    X_faket = rand(10,2)
+    X_faket[1:5,:] = X_faket[1:5,:] - 3*rand(5,2)
+    y_faket = ones(10)
+    y_faket[1:5] = -1*ones(5)
+
+    # return it all
+    return X_fake, y_fake, X_faket, y_faket
+end
 
 function data_set_1()
 
@@ -122,10 +144,10 @@ function test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_na
     kernal_func = linear_kernal
 
     # set up averages for training loss
-    Objective_evaluations = zeros(9, Int(max_iter))
-    Test_errors = zeros(9, Int(max_iter))
-    KKT_conditions_iterations = zeros(9)
-    sufficient_convergence_iterations = zeros(9)
+    Objective_evaluations = zeros(10, Int(max_iter))
+    Test_errors = zeros(10, Int(max_iter))
+    KKT_conditions_iterations = zeros(10)
+    sufficient_convergence_iterations = zeros(10)
 
     # average over the number of iterations to convergence
     for i = 1:averaging
@@ -144,6 +166,8 @@ function test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_na
         Objective_evaluations[2,:] += trainErr_2
         Test_errors[2,:] += testErr_2
         KKT_conditions_iterations[2] += count_2
+        println(support_vectors_2)
+        println(trainErr_2[end])
 
         # H = L * I
         print("GSL-q: ")
@@ -195,6 +219,14 @@ function test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_na
         KKT_conditions_iterations[9] += count_9
 
         # sample based gsf n
+        print("two metric projection: ")
+        trainErr_10, testErr_10, count_10, support_vectors_10 = two_metric_projection(X_train, y_train, X_test, y_test, kernal_func, C, epsilon, max_iter, false)
+        Objective_evaluations[10,:] += trainErr_10
+        Test_errors[10,:] += testErr_10
+        KKT_conditions_iterations[10] += count_10
+        println(support_vectors_10)
+        println(trainErr_10[end])
+        # sample based gsf n
         # trainErr_10, testErr_10, count_10, support_vectors_10 = fit_gsq_approx_6(X_fake, y_fake, X_faket, y_faket, kernal_func, C, epsilon, max_iter, false, 100)
         # Objective_evaluations[10,:] += trainErr_10
         # Test_errors[10,:] += testErr_10
@@ -208,7 +240,7 @@ function test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_na
     KKT_conditions_iterations = KKT_conditions_iterations./ averaging
 
     # set of methods to be tested
-    methods = ["GSr-q" "GSf-q" "GSl-q" "LibSVM" "graident diff" "GSd-q" "sample based GSf-q (nlogn)" "sample based GSf-q 1/2nlog(n)" "sample based GSf-q (n)"]
+    methods = ["GSr-q" "GSf-q" "GSl-q" "LibSVM" "graident diff" "GSd-q" "sample based GSf-q (nlogn)" "sample based GSf-q 1/2nlog(n)" "sample based GSf-q (n)" "TMP"]
 
     # now plot it all then save it
     plot(1:max_iter,  Objective_evaluations', label=methods)
@@ -217,7 +249,7 @@ function test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_na
     savefig(test_file_name)
 
     # print the iterations
-    for i=1:9
+    for i=1:10
         println(methods[i], ",  ", KKT_conditions_iterations[i])
     end
 
@@ -226,41 +258,47 @@ function test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_na
 end
 
 # set hyper parameters
-averaging = 10
-max_iter = 1e3
+averaging = 1
+max_iter = 2e4
 
 # test 1:
-X_train, y_train, X_test, y_test = data_set_1()
+X_train, y_train, X_test, y_test = data_set_0()
 obj_file_name = "obj_value_1.png"
 test_file_name = "test_error_1.png"
 test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
 
-# test 2:
-X_train, y_train, X_test, y_test = data_set_2()
-obj_file_name = "obj_value_2.png"
-test_file_name = "test_error_2.png"
-test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
+# # test 1:
+# X_train, y_train, X_test, y_test = data_set_1()
+# obj_file_name = "obj_value_1.png"
+# test_file_name = "test_error_1.png"
+# test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
+#
+# # test 2:
+# X_train, y_train, X_test, y_test = data_set_2()
+# obj_file_name = "obj_value_2.png"
+# test_file_name = "test_error_2.png"
+# test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
+#
+# # test 3
+# X_train, y_train, X_test, y_test = data_set_3()
+# obj_file_name = "obj_value_3.png"
+# test_file_name = "test_error_3.png"
+# test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
 
-# test 3
-X_train, y_train, X_test, y_test = data_set_3()
-obj_file_name = "obj_value_3.png"
-test_file_name = "test_error_3.png"
-test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
-
-# test 4
-X_train, y_train, X_test, y_test = data_set_3()
-obj_file_name = "obj_value_4.png"
-test_file_name = "test_error_4.png"
-test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
-
-# test 5
-X_train, y_train, X_test, y_test = data_set_3()
-obj_file_name = "obj_value_5.png"
-test_file_name = "test_error_5.png"
-test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
-
-# test 6
-X_train, y_train, X_test, y_test = data_set_3()
-obj_file_name = "obj_value_6.png"
-test_file_name = "test_error_6.png"
-test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
+# # test 4
+# X_train, y_train, X_test, y_test = data_set_3()
+# obj_file_name = "obj_value_4.png"
+# test_file_name = "test_error_4.png"
+# test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
+#
+# # test 5
+# X_train, y_train, X_test, y_test = data_set_3()
+# obj_file_name = "obj_value_5.png"
+# test_file_name = "test_error_5.png"
+# test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
+#
+# # test 6
+# X_train, y_train, X_test, y_test = data_set_3()
+# obj_file_name = "obj_value_6.png"
+# test_file_name = "test_error_6.png"
+# test(X_train, y_train, X_test, y_test, max_iter, averaging, obj_file_name, test_file_name)
